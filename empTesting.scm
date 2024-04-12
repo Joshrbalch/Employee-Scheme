@@ -7,10 +7,39 @@
 (define (addCommissioned empList firstName lastName basePay sales commissionRate)
   (cons (list "commission" firstName lastName basePay sales commissionRate) empList))
 
+(define (readEmployee name)
+  (let ((port (open-input-file name)))
+    (define empList '())
+    (read-file port empList)
+    (close-input-port port)
+    'done))
+
+(define (str-split str ch)
+  (let ((len (string-length str)))
+    letrec
+      ((split
+        (lambda (a b)
+          (cond
+            ((>=b len) (if (= a b) '() (cons (substring str a b)'())))
+              ((char=? ch(string-ref str b)) (if(= a b)
+                (split (+ 1 a) (+ 1 b))
+                (cons (substring str a b)(split b b))))
+                (else (split a (+ 1 b))))))
+                (split 0 0))))
+
+(define (read-file file empList)
+  (let loop ((line (read-line file)))
+    (if (eof-object? line)
+        empList
+        (begin
+          (display "Read line: ")
+          (display line)
+          (newline)
+          (set! empList (string-split line))))))
+
 (define employees '()) ; Define an empty list of employees
 
-; Example usage:
-(set! employees (addSalaried employees "John" "Doe" 3000))
-(set! employees (addHourly employees "Jane" "Smith" 30 7.6))
-(set! employees (addCommissioned employees "Alice" "Johnson" 2000 5000 0.05))
+(read-file "employees.dat" employees)
+
 (display employees)
+(newline)
