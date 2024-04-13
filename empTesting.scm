@@ -1,5 +1,5 @@
 (define op "ne")
-(define threshold 300)
+(define threshold 1800)
 
 (define (check value op threshold)
   (let ((num-value (if (number? value) value (string->number value)))
