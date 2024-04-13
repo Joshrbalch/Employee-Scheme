@@ -1,11 +1,16 @@
+(define op "ne")
+(define threshold 300)
+
 (define (check value op threshold)
-  (cond ((string=? op "eq") (equal? value threshold))
-        ((string=? op "ne") (not (equal? value threshold)))
-        ((string=? op "ge") (>= value threshold))
-        ((string=? op "le") (<= value threshold))
-        ((string=? op "gt") (> value threshold))
-        ((string=? op "lt") (< value threshold))
-        (else #f)))
+  (let ((num-value (if (number? value) value (string->number value)))
+        (num-threshold (if (number? threshold) threshold (string->number threshold))))
+    (cond ((string=? op "eq") (equal? num-value num-threshold))
+          ((string=? op "ne") (not (equal? num-value num-threshold)))
+          ((string=? op "ge") (>= num-value num-threshold))
+          ((string=? op "le") (<= num-value num-threshold))
+          ((string=? op "gt") (> num-value num-threshold))
+          ((string=? op "lt") (< num-value num-threshold))
+          (else #f))))
 
 (define (readEmployee name)
   (let ((port (open-input-file name)))
@@ -38,33 +43,46 @@
             (set! empList (append empList (list (str-split line #\space))))
             (loop (read-line port)))))))
 
-(define display-salaried (lambda (emp)
-  (let ((salary (cadr (cddr emp)))
-        (firstName (cadr emp))
-        (lastName (caddr emp)))
-    (display "Salaried employee: ")
-    (display firstName)
-    (display " ")
-    (display lastName)
-    (newline)
-    (display "weekly salary: ")
-    (display salary)
-    (display "")
-    (newline)
-    (display "earned $")
-    (display salary)
-    (display "")
-    (newline)
-    (newline))))
+(define calculateSalary
+  (lambda (emp)
+    (let ((type (car emp)))
+      (cond
+        ((string=? type "salaried") (calc-salaried-earned emp))
+        ((string=? type "hourly") (calc-hourly-earned emp))
+        ((string=? type "commission") (calc-commissioned-earned emp))))))
+
+(define (calc-salaried-earned emp)
+  (define oldSalary (string-trim (cadr (cddr emp))))
+  (string->number oldSalary))
+
+(define display-salaried 
+  (lambda (emp)
+    (let ((salary (cadr (cddr emp)))
+          (firstName (cadr emp))
+          (lastName (caddr emp)))
+      (display "Salaried employee: ")
+      (display firstName)
+      (display " ")
+      (display lastName)
+      (newline)
+      (display "weekly salary: ")
+      (display salary)
+      (display "")
+      (newline)
+      (display "earned $")
+      (display salary)
+      (display "")
+      (newline)
+      (newline))))
 
 (define (calc-hourly-earned emp)
+  (define oldhourlyRate (string-trim (caddr (cddr emp))))
   (let ((hoursWorked (string->number (cadr (cddr emp))))
-        (hourlyRate (string->number (caddr (cddr emp)))))
+        (hourlyRate (string->number oldhourlyRate)))
     (cond
-      ((<= hoursWorked 40) (* hoursWorked hourlyRate)) ; If hours worked is less than or equal to 40
-      ((<= hoursWorked 50) (+ (* 40 hourlyRate) (* 1.5 hourlyRate (- hoursWorked 40)))) ; If hours worked is greater than 40 and less than or equal to 50
-      (else (+ (* 40 hourlyRate) (* 1.5 hourlyRate 10) (* 2 hourlyRate (- hoursWorked 50))))))) ; If hours worked is greater than 50
-
+      ((<= hoursWorked 40) (* hoursWorked hourlyRate))
+      ((<= hoursWorked 50) (+ (* 40 hourlyRate) (* 1.5 hourlyRate (- hoursWorked 40))))
+      (else (+ (* 40 hourlyRate) (* 1.5 hourlyRate 10) (* 2 hourlyRate (- hoursWorked 50)))))))
 
 (define display-hourly
   (lambda (emp)
@@ -84,7 +102,7 @@
       (display hourlyRate)
       (newline)
       (display "earned $")
-      (display earned) ; Display the calculated earnings directly
+      (display earned)
       (newline)
       (newline))))
 
@@ -92,7 +110,8 @@
   (define basePay (cadr (cddr emp)))
   (define newBasePay (string->number basePay))
   (define newSales (string->number (caddr (cddr emp))))
-  (define newCommissionRate (string->number (cadddr (cddr emp))))
+  (define oldcommissionRate (string-trim (cadddr (cddr emp))))
+  (define newCommissionRate (string->number oldcommissionRate))
   (if (> newBasePay (* newSales newCommissionRate))
       newBasePay
       (+ newBasePay (* newSales newCommissionRate))))
@@ -126,26 +145,41 @@
   (for-each
     (lambda (emp)
       (if (not (null? emp))
-          (let ((type (car emp)))
-            (cond
-              ((string=? type "salaried")
-               (display-salaried emp))
-              ((string=? type "hourly")
-               (display-hourly emp))
-              ((string=? type "commission")
-               (display-commissioned emp))))))
+          (let ((salary (calculateSalary emp)))
+            (if (number? salary)
+                (if (check salary op threshold)
+                    (let ((type (car emp)))
+                      (cond
+                        ((string=? type "salaried")
+                         (display-salaried emp))
+                        ((string=? type "hourly")
+                         (display-hourly emp))
+                        ((string=? type "commission")
+                         (display-commissioned emp))))))
+            ))
+      )
     empList))
 
 (define (count lst)
   (if (null? lst)
       0
-      (+ 1 (count (cdr lst)))))
+      (let ((salary (calculateSalary (car lst))))
+        (if (number? salary)
+            (if (check salary op threshold)
+                (+ 1 (count (cdr lst)))
+                (count (cdr lst)))
+            (count (cdr lst))))))
+
+(define countEmployees
+  (lambda (empList)
+    (let ((numEmployees (count empList)))
+      (display "Number of employees: ")
+      (display numEmployees)
+      (newline)
+      (newline)
+      numEmployees)))
 
 (define empList '()) ;; Initialize the employee list
 (define empList (read-file "employees.dat" empList))
-(display "Number of employees: ")
-(display (count empList)) ;; Display the number of employees
-(newline)
-(newline)
 (display-employees empList) ;; Display the resulting employee list
-
+(countEmployees empList) ;; Display the number of employees
