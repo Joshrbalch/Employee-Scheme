@@ -1,16 +1,18 @@
-(define op "ne")
-(define threshold 1800)
+(define op "ge")
+(define threshold 1000)
 
 (define (check value op threshold)
-  (let ((num-value (if (number? value) value (string->number value)))
-        (num-threshold (if (number? threshold) threshold (string->number threshold))))
-    (cond ((string=? op "eq") (equal? num-value num-threshold))
-          ((string=? op "ne") (not (equal? num-value num-threshold)))
-          ((string=? op "ge") (>= num-value num-threshold))
-          ((string=? op "le") (<= num-value num-threshold))
-          ((string=? op "gt") (> num-value num-threshold))
-          ((string=? op "lt") (< num-value num-threshold))
-          (else #f))))
+  (if (number? value)
+      (let ((num-value value)
+            (num-threshold (if (number? threshold) threshold (string->number threshold))))
+        (cond ((string=? op "eq") (= num-value num-threshold))
+              ((string=? op "ne") (not (= num-value num-threshold)))
+              ((string=? op "ge") (>= num-value num-threshold))
+              ((string=? op "le") (<= num-value num-threshold))
+              ((string=? op "gt") (> num-value num-threshold))
+              ((string=? op "lt") (< num-value num-threshold))
+              (else #f)))
+      #f))
 
 (define (readEmployee name)
   (let ((port (open-input-file name)))
@@ -179,7 +181,59 @@
       (newline)
       numEmployees)))
 
+(define (getAverage lst) ; modify to return emp list of min, not min int
+  (let ((sum 0)
+        (count 0))
+    (for-each
+      (lambda (emp)
+        (if (not (null? emp))
+            (let ((salary (calculateSalary emp)))
+              (if (check salary op threshold)
+                  (if (number? salary)
+                      (begin
+                        (set! sum (+ sum salary))
+                        (set! count (+ count 1))))))))
+      lst)
+    (if (= count 0)
+        0
+        (/ sum count))))
+
+(define (getMin lst) ; modify to return emp list of max, not max int
+  (let ((min 1000000))
+    (for-each
+      (lambda (emp)
+        (if (not (null? emp))
+            (let ((salary (calculateSalary emp)))
+              (if (check salary op threshold)
+                  (if (number? salary)
+                      (if (< salary min)
+                          (set! min salary)))))))
+      lst)
+    min))
+
+(define (getMax lst)
+  (let ((max 0))
+    (for-each
+      (lambda (emp)
+        (if (not (null? emp))
+            (let ((salary (calculateSalary emp)))
+              (if (check salary op threshold)
+                  (if (number? salary)
+                      (if (> salary max)
+                          (set! max salary)))))))
+      lst)
+    max))
+
 (define empList '()) ;; Initialize the employee list
 (define empList (read-file "employees.dat" empList))
 (display-employees empList) ;; Display the resulting employee list
 (countEmployees empList) ;; Display the number of employees
+(display "Average salary: ")
+(display (getAverage empList))
+(newline)
+(display "Minimum salary: ")
+(display (getMin empList))
+(newline)
+(display "Maximum salary: ")
+(display (getMax empList))
+(newline)
