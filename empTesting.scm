@@ -1,4 +1,4 @@
-(define op "ge")
+(define op "le")
 (define threshold 1000)
 
 (define (check value op threshold)
@@ -198,31 +198,38 @@
         0
         (/ sum count))))
 
-(define (getMin lst) ; modify to return emp list of max, not max int
-  (let ((min 1000000))
+(define (getMin lst)
+  (let ((min-salary 1000000)
+        (min-emp '()))
     (for-each
-      (lambda (emp)
-        (if (not (null? emp))
-            (let ((salary (calculateSalary emp)))
-              (if (check salary op threshold)
-                  (if (number? salary)
-                      (if (< salary min)
-                          (set! min salary)))))))
-      lst)
-    min))
+     (lambda (emp)
+       (if (not (null? emp))
+           (let ((salary (calculateSalary emp)))
+             (if (check salary op threshold)
+                 (if (number? salary)
+                     (if (< salary min-salary)
+                         (begin
+                           (set! min-salary salary)
+                           (set! min-emp emp))))))))
+     lst)
+    min-emp))
+
 
 (define (getMax lst)
-  (let ((max 0))
+  (let ((max-salary -1000000) ; Initialize max-salary to a very low value
+        (max-emp '()))
     (for-each
-      (lambda (emp)
-        (if (not (null? emp))
-            (let ((salary (calculateSalary emp)))
-              (if (check salary op threshold)
-                  (if (number? salary)
-                      (if (> salary max)
-                          (set! max salary)))))))
-      lst)
-    max))
+     (lambda (emp)
+       (if (not (null? emp))
+           (let ((salary (calculateSalary emp)))
+             (if (check salary op threshold)
+                 (if (number? salary)
+                     (if (> salary max-salary)
+                         (begin
+                           (set! max-salary salary)
+                           (set! max-emp emp))))))))
+     lst)
+    max-emp))
 
 (define empList '()) ;; Initialize the employee list
 (define empList (read-file "employees.dat" empList))
@@ -231,9 +238,8 @@
 (display "Average salary: ")
 (display (getAverage empList))
 (newline)
+(newline)
 (display "Minimum salary: ")
-(display (getMin empList))
-(newline)
+(display-employees (list (getMin empList)))
 (display "Maximum salary: ")
-(display (getMax empList))
-(newline)
+(display-employees (list (getMax empList)))
