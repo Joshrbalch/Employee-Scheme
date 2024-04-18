@@ -1,5 +1,5 @@
-(define op "le")
-(define threshold 1000)
+(define op "ge")
+(define threshold 0)
 
 (define (check value op threshold)
   (if (number? value)
@@ -136,7 +136,8 @@
       (display ", sales: ")
       (display sales)
       (display ", commission rate: ")
-      (display commissionRate)
+      (display commissionRate) ; Display the commission rate as percentage
+      (display "%")
       (newline)
       (display "earned $")
       (display earned)
@@ -175,13 +176,14 @@
 (define countEmployees
   (lambda (empList)
     (let ((numEmployees (count empList)))
-      (display "Number of employees: ")
+      (display "There are ")
       (display numEmployees)
+      (display " employees")
       (newline)
       (newline)
       numEmployees)))
 
-(define (getAverage lst) ; modify to return emp list of min, not min int
+(define (getAverage lst)
   (let ((sum 0)
         (count 0))
     (for-each
@@ -198,6 +200,14 @@
         0
         (/ sum count))))
 
+(define average 
+  (lambda (empList)
+    (display "Average salary is $")
+    (display (getAverage empList))
+    (newline)
+    (newline)
+    'done))
+
 (define (getMin lst)
   (let ((min-salary 1000000)
         (min-emp '()))
@@ -213,6 +223,8 @@
                            (set! min-emp emp))))))))
      lst)
     min-emp))
+
+    
 
 
 (define (getMax lst)
@@ -231,15 +243,42 @@
      lst)
     max-emp))
 
-(define empList '()) ;; Initialize the employee list
-(define empList (read-file "employees.dat" empList))
-(display-employees empList) ;; Display the resulting employee list
-(countEmployees empList) ;; Display the number of employees
-(display "Average salary: ")
-(display (getAverage empList))
-(newline)
-(newline)
-(display "Minimum salary: ")
-(display-employees (list (getMin empList)))
-(display "Maximum salary: ")
-(display-employees (list (getMax empList)))
+(define totalSalary 0) ; Define totalSalary as a global variable
+
+(define (totalRec lst)
+  (if (null? lst)
+      0
+      (let ((current-salary (calculateSalary (car lst))))
+        (if (check current-salary op threshold)
+            (+ current-salary (totalRec (cdr lst)))
+            (totalRec (cdr lst))))))
+
+(define (total lst)
+  (set! totalSalary (totalRec lst))
+  (display "Total payment is $")
+  (display totalSalary)
+  (newline))
+
+(define (perform filename function . args)
+  (define empList '()) ;; Initialize the employee list
+  (define empList (read-file "employees.dat" empList))
+
+  (let ((op "ge")  ; Default value for op
+        (threshold 0))  ; Default value for threshold
+    (if (not (null? args))
+        (begin
+        (display "DEGBUG")
+        (newline)
+          (if (string? (car args))
+              (set! op (cadr args)))
+          (if (string=? (car args) "threshold")
+              (set! threshold (string->number (cadr args))))))
+    (cond
+      ((string=? function "print") (display-employees empList))
+      ((string=? function "count") (countEmployees empList))
+      ((string=? function "avg") (average empList))
+      ((string=? function "min") (display-employees (list (getMin empList))))
+      ((string=? function "max") (display-employees (list (getMax empList))))
+      ((string=? function "total") (total empList))
+      (else #f))))
+
