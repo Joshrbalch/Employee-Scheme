@@ -116,13 +116,18 @@
   (define newCommissionRate (string->number oldcommissionRate))
   (if (> newBasePay (* newSales newCommissionRate))
       newBasePay
-      (+ newBasePay (* newSales newCommissionRate))))
+      (* newSales newCommissionRate)))
+
+(define (convert-commission-rate emp)
+  (define rate (string-trim (cadddr (cddr emp))))
+  (define newCommissionRate (string->number rate))
+  (* newCommissionRate 100))
 
 (define display-commissioned
   (lambda (emp)
     (let ((basePay (cadr (cddr emp)))
           (sales (caddr (cddr emp)))
-          (commissionRate (cadddr (cddr emp)))
+          (commissionRate (convert-commission-rate emp))
           (firstName (cadr emp))
           (lastName (caddr emp))
           (earned (calc-commissioned-earned emp)))
@@ -131,15 +136,15 @@
       (display " ")
       (display lastName)
       (newline)
-      (display "base pay: ")
+      (display "base pay: $")
       (display basePay)
       (display ", sales: ")
       (display sales)
       (display ", commission rate: ")
-      (display commissionRate) ; Display the commission rate as percentage
+      (display (string-trim (number->string commissionRate))) ; Display the commission rate as percentage
       (display "%")
       (newline)
-      (display "earned $")
+      (display "earned: $")
       (display earned)
       (newline)
       (newline))))
